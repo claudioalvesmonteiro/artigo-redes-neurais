@@ -10,13 +10,14 @@ junho 2020
 # importar pacotes
 import pandas as pd
 import numpy as np
+import re
 
 #======================================================
 # criacao de variaveis com base nos dados de MATRICULA
 #======================================================
 
 # importar dados de matrciula
-data = pd.read_csv('data/raw/data.csv')
+data = pd.read_csv('data.csv')
 
 # criar alvo - aluno fora da idade padrao para a serie
 data['alvo'] = np.where(np.isnan(data['NU_IDADE_id'].values), 1, 0)
@@ -108,15 +109,37 @@ data['escola_internet'] = np.where((data['IN_LIXO_SERVICO_COLETA_esc'].values ==
 # criacao de variaveis com base nos dados de MUNICIPIO
 #======================================================
 
+# importar codigos dos municipios e populacao
+code_pop = pd.read_csv('data/raw/CODE_MUNI.csv')
+
 # violencia
-muni_agressoes = pd.read_csv('data/raw/datasus_obitos_agressoes.csv')
+obitos_agressao = pd.read_csv('data/raw/datasus_obitos_agressoes.csv', sep=';')
+obitos_agressao['code_muni'] = [int(re.findall('\d+', x )[0]) for x in obitos_agressao['municipio']]
 
 # saude
-obitos_infant = pd.read_csv('data/raw/datasus_obitos_infantis.csv')
+obitos_infant = pd.read_csv('data/raw/datasus_obitos_infantis.csv', sep=';')
+obitos_infant['code_muni'] = [int(re.findall('\d+', x )[0]) for x in obitos_infant['municipio']]
 
 # pib/idh
 atlas = pd.read_excel('data/raw/atlas_brasil_data.xlsx')
+atlas.columns =['code_muni2', 'municipio', 'porcent_trab_com_ensino_medio', 'porcent_agua_encanada', 'idhm']
 
+# combinar dados
+municipio_df = code_pop.merge(obitos_agressao, left_on='code_muni', right_on='code_muni', how='left')
+municipio_df = municipio_df.merge(obitos_infant, left_on='code_muni', right_on='code_muni', how='left')
+municipio_df = municipio_df.merge(atlas, left_on='code_muni2', right_on='code_muni2', how='left')
+
+# vars
+municipio_df['obitos_infant_prop_pop'] = municipio_df['obitos_infantis'] / municipio_df['pop_2012'] * 10000
+municipio_df['obitos_agressao_prop_pop'] = municipio_df['obitos_agressao'] / municipio_df['pop_2012'] * 10000
+
+# normalizacao
+cols = ['log_to_capital',  'porcent_trab_com_ensino_medio', 'porcent_agua_encanada', 'idhm', 'obitos_agressao_prop_pop', 'obitos_infant_prop_pop']
+for i in cols:
+    municipio_df[i] = keras.utils.normalize(municipio_df[i], axis=1) 
+
+
+municipio_df[i] = keras.utils.normalize(municipio_df[i], axis=1) 
 
 # selecionar variaveis de interesse
 data = data[['alvo', 

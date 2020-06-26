@@ -109,11 +109,13 @@ data['escola_internet'] = np.where((data['IN_LIXO_SERVICO_COLETA_esc'].values ==
 #======================================================
 
 # violencia
-muni_agressoes = pd.read_csv('data/raw/datasus_obitos_agressoes_2018.csv')
+muni_agressoes = pd.read_csv('data/raw/datasus_obitos_agressoes.csv')
 
 # saude
+obitos_infant = pd.read_csv('data/raw/datasus_obitos_infantis.csv')
 
 # pib/idh
+atlas = pd.read_excel('data/raw/atlas_brasil_data.xlsx')
 
 
 # selecionar variaveis de interesse
